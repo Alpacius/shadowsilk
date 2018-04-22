@@ -77,17 +77,21 @@ struct gapbuffer gapbuffer_insert_cstr(struct gapbuffer gb, const char *cstr) {
 
 struct bufline *bufline_init(struct bufline *ln, uint32_t pos, uint32_t cap) {
     (ln->pos = pos), (ln->cap = cap), (ln->magic = SSLK_BUFLINE_MAGIC);
-    // TODO buffer init
+    ln->buf = gapbuffer_new(cap);
     return list_init(ihandle_of(ln, ->)), ln;
 }
 
 struct bufline *bufline_ruin(struct bufline *ln) {
     if (!list_node_isolated(ihandle_of(ln, ->)))
         list_del(ihandle_of(ln, ->));
-    // TODO buffer ruin
+    gapbuffer_delete(ln->buf)
     return ln;
 }
 
-struct bufline *bufline_insert(struct bufline *ln, uint32_t loc, const char *str) {
-    return ln;
+struct bufline *bufline_insert_str(struct bufline *ln, uint64_t loc, const char *str) {
+    return (ln->buf = gapbuffer_setloc(ln->buf, loc)), (ln->buf = gapbuffer_insert_cstr(ln->buf, str)), ln;
+}
+
+struct bufline *bufline_delete_str(struct bufline *ln, uint64_t loc, uint64_t size) {
+    return (ln->buf = gapbuffer_setloc(ln->buf, loc)), (ln->buf = gapbuffer_delete_segment(ln->buf, size)), ln;
 }
