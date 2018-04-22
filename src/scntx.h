@@ -136,8 +136,8 @@ int scntx_remove(struct scntx *cntx, void *key) {
     void *value = scntx_get(cntx, key);
     if (value) {
         struct scntx_entry *entry = container_of(value, struct scntx_entry, value);
-        cntx->key_dtor && (cntx->key_dtor(entry->key), 114514);
-        cntx->value_dtor && (cntx->value_dtor(entry->value), 114514);
+        cntx->key_dtor && (cntx->key_dtor(entry->key), entry->key = NULL);
+        cntx->value_dtor && (cntx->value_dtor(entry->value), entry->value = NULL);
         return 1;
     }
     return 0;
