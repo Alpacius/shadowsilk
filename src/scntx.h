@@ -2,7 +2,6 @@
 
 #include    "stdc_common.h"
 #include    "miscutils.h"
-#include    "list.h"
 
 #define     DEFAULT_LOAD    0.7
 #define     MAX_CAP         128
@@ -37,7 +36,7 @@ int cstrcmp(void *lhs, void *rhs) {
 #define djbhash_cstr ((uint64_t)(*)(const void *) djbhash_cstr_)
 
 static inline
-struct scntx *scntx_new(uint64_t cap, uint64_t (*hash)(void *), int (*cmp)(void *, void *), void (*key_dtor)(void *), void (*value_dtor)(void *)) {
+struct scntx *scntx_new(uint64_t cap, uint64_t (*hash)(const void *), int (*cmp)(void *, void *), void (*key_dtor)(void *), void (*value_dtor)(void *)) {
     struct scntx *cntx = malloc(sizeof(struct scntx));
     if (cntx) {
         (cntx->size = 0), (cntx->cap = cap), (cntx->cmp = cmp), (cntx->hash = hash), (cntx->key_dtor = key_dtor), (cntx->value_dtor = value_dtor);
@@ -68,6 +67,7 @@ static inline
 int scntx_rehash(struct scntx *cntx) {
     if (cntx->cap * 2 > MAX_CAP)
         return 0;
+    // FIXME brutal
     struct scntx_entry *new_entries = malloc(sizeof(struct scntx_entry) * (cntx->cap * 2));
     if (!new_entries)
         return 0;
