@@ -15,17 +15,19 @@ struct scntx_entry {
 struct scntx {
     uint64_t size, cap;
     int (*cmp)(void *, void *);
-    uint64_t (*hash)(void *key);
+    uint64_t (*hash)(const void *key);
     struct scntx_entry *entries;
 };
 
 static inline
-uint64_t djbhash_cstr(const char *cstr) {
+uint64_t djbhash_cstr_(const char *cstr) {
     uint64_t h = 5381;
     for (uint64_t i = 0; cstr[i]; i++)
         h = ((h << 5) + h) + cstr[i];
     return h;
 }
+
+#define djbhash_cstr ((uint64_t)(*)(const void *) djbhash_cstr_)
 
 static inline
 struct scntx *scntx_new(uint64_t cap, uint64_t (*hash)(void *), int (*cmp)(void *, void *)) {
