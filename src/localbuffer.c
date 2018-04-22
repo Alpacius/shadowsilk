@@ -74,7 +74,6 @@ struct gapbuffer gapbuffer_insert_cstr(struct gapbuffer gb, const char *cstr) {
     return (gb.loc = gb.gapstart), (gb.size += len), gb;
 }
 
-
 struct bufline *bufline_init(struct bufline *ln, uint32_t pos, uint32_t cap) {
     (ln->pos = pos), (ln->cap = cap), (ln->magic = SSLK_BUFLINE_MAGIC);
     ln->buf = gapbuffer_new(cap);
@@ -86,6 +85,15 @@ struct bufline *bufline_ruin(struct bufline *ln) {
         list_del(ihandle_of(ln, ->));
     gapbuffer_delete(ln->buf)
     return ln;
+}
+
+struct bufline *bufline_new(uint32_t pos, uint32_t cap) {
+    struct bufline *ln = malloc(sizeof(struct bufline));
+    return ln ? bufline_init(ln, pos, cap) : NULL;
+}
+
+void bufline_delete(struct bufline *ln) {
+    free(bufline_ruin(ln));
 }
 
 struct bufline *bufline_insert_str(struct bufline *ln, uint64_t loc, const char *str) {
