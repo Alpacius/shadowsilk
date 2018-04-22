@@ -16,6 +16,8 @@ struct scntx {
     uint64_t size, cap;
     int (*cmp)(void *, void *);
     uint64_t (*hash)(const void *key);
+    void (*key_dtor)(void *);
+    void (*value_dtor)(void *);
     struct scntx_entry *entries;
 };
 
@@ -27,13 +29,18 @@ uint64_t djbhash_cstr_(const char *cstr) {
     return h;
 }
 
+static inline
+int cstrcmp(void *lhs, void *rhs) {
+    return strcmp((const char *) lhs, (const char *) rhs) == 0;
+}
+
 #define djbhash_cstr ((uint64_t)(*)(const void *) djbhash_cstr_)
 
 static inline
-struct scntx *scntx_new(uint64_t cap, uint64_t (*hash)(void *), int (*cmp)(void *, void *)) {
+struct scntx *scntx_new(uint64_t cap, uint64_t (*hash)(void *), int (*cmp)(void *, void *), void (*key_dtor)(void *), void (*value_dtor)(void *)) {
     struct scntx *cntx = malloc(sizeof(struct scntx));
     if (cntx) {
-        (cntx->size = 0), (cntx->cap = cap), (cntx->cmp = cmp);
+        (cntx->size = 0), (cntx->cap = cap), (cntx->cmp = cmp), (cntx->hash = hash), (cntx->key_dtor = key_dtor), (cntx->value_dtor = value_dtor);
         cntx->entries = malloc(sizeof(struct scntx_entry) * cap);
         if (!cntx->entries)
             free(cntx), cntx = NULL;
@@ -44,10 +51,10 @@ struct scntx *scntx_new(uint64_t cap, uint64_t (*hash)(void *), int (*cmp)(void 
 }
 
 static inline
-void scntx_delete(struct scntx *cntx, void (*key_dtor)(void *), void (*value_dtor)(void *)) {
+void scntx_delete(struct scntx *cntx) {
     for (uint64_t i = 0; i < cntx->cap; i++) {
-        cntx->entries[i].key && key_dtor && (key_dtor(cntx->entries[i].key), 114514);
-        cntx->entries[i].value && value_dtor && (value_dtor(cntx->entries[i].value), 114514);
+        cntx->entries[i].key && cntx->key_dtor && (cntx->key_dtor(cntx->entries[i].key), 114514);
+        cntx->entries[i].value && cntx->value_dtor && (cntx->value_dtor(cntx->entries[i].value), 114514);
     }
     free(cntx);
 }
@@ -89,7 +96,7 @@ void *scntx_get(struct scntx *cntx, void *key) {
 }
 
 static inline
-int scntx_put_(struct scntx *cntx, void *key, void *value) {
+int scntx_put(struct scntx *cntx, void *key, void *value) {
     // FIXME brutal
     if (scntx_loadfactor(cntx) > DEFAULT_LOAD && !scntx_rehash(cntx))
         return 0;
@@ -105,16 +112,38 @@ int scntx_put_(struct scntx *cntx, void *key, void *value) {
 }
 
 static inline
-int scntx_remove(struct scntx *cntx, void *key, void (*key_dtor)(void *), void (*value_dtor)(void *)) {
+int scntx_put_simple(struct scntx *cntx, const char *key, void *value) {
+    if (scntx_loadfactor(cntx) > DEFAULT_LOAD && !scntx_rehash(cntx))
+        return 0;
+    uint64_t h = cntx->hash(key) % cntx->cap;
+    uint64_t i = h;
+    do {
+        if (!cntx->entries[i].key) 
+            return 
+                strncpy(cntx->entries[i].key_imm, key, 64), 
+                (cntx->entries[i].key_imm[63] = 0), 
+                (cntx->entries[i].key = cntx->entries[i].key_imm), 
+                (cntx->entries[i].value = value), 
+                1;
+        else
+            i = (i + 1) % cntx->cap;
+    } while (i != h);
+    return 0;
+}
+
+static inline
+int scntx_remove(struct scntx *cntx, void *key) {
     void *value = scntx_get(cntx, key);
     if (value) {
         struct scntx_entry *entry = container_of(value, struct scntx_entry, value);
-        key_dtor && (key_dtor(entry->key), 114514);
-        value_dtor && (value_dtor(entry->value), 114514);
+        cntx->key_dtor && (cntx->key_dtor(entry->key), 114514);
+        cntx->value_dtor && (cntx->value_dtor(entry->value), 114514);
         return 1;
     }
     return 0;
 }
+
+#define scntx_simple(cap_, value_dtor_) scntx_new((cap_), djbhash_cstr, cstrcmp, NULL, (value_dtor_))
 
 #undef      DEFAULT_LOAD
 #undef      MAX_CAP
