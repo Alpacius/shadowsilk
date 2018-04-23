@@ -8,7 +8,6 @@
 
 struct scntx_entry {
     void *key, *value;
-    char key_imm[64];
 };
 
 struct scntx {
@@ -112,26 +111,6 @@ int scntx_put(struct scntx *cntx, void *key, void *value) {
 }
 
 static inline
-int scntx_put_simple(struct scntx *cntx, const char *key, void *value) {
-    if (scntx_loadfactor(cntx) > DEFAULT_LOAD && !scntx_rehash(cntx))
-        return 0;
-    uint64_t h = cntx->hash(key) % cntx->cap;
-    uint64_t i = h;
-    do {
-        if (!cntx->entries[i].key) 
-            return 
-                strncpy(cntx->entries[i].key_imm, key, 64), 
-                (cntx->entries[i].key_imm[63] = 0), 
-                (cntx->entries[i].key = cntx->entries[i].key_imm), 
-                (cntx->entries[i].value = value), 
-                1;
-        else
-            i = (i + 1) % cntx->cap;
-    } while (i != h);
-    return 0;
-}
-
-static inline
 int scntx_remove(struct scntx *cntx, void *key) {
     void *value = scntx_get(cntx, key);
     if (value) {
@@ -143,7 +122,7 @@ int scntx_remove(struct scntx *cntx, void *key) {
     return 0;
 }
 
-#define scntx_simple(cap_, value_dtor_) scntx_new((cap_), djbhash_cstr, cstrcmp, NULL, (value_dtor_))
+#define scntx_simple(cap_, value_dtor_) scntx_new((cap_), djbhash_cstr, cstrcmp, free, (value_dtor_))
 
 #undef      DEFAULT_LOAD
 #undef      MAX_CAP
