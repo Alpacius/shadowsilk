@@ -21,7 +21,8 @@ struct scntx {
 };
 
 static inline
-uint64_t djbhash_cstr_(const char *cstr) {
+uint64_t djbhash_cstr(const void *arg) {
+    const char *cstr = arg;
     uint64_t h = 5381;
     for (uint64_t i = 0; cstr[i]; i++)
         h = ((h << 5) + h) + cstr[i];
@@ -32,8 +33,6 @@ static inline
 int cstrcmp(void *lhs, void *rhs) {
     return strcmp((const char *) lhs, (const char *) rhs) == 0;
 }
-
-#define djbhash_cstr ((uint64_t)(*)(const void *) djbhash_cstr_)
 
 static inline
 struct scntx *scntx_new(uint64_t cap, uint64_t (*hash)(const void *), int (*cmp)(void *, void *), void (*key_dtor)(void *), void (*value_dtor)(void *)) {
