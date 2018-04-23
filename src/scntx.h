@@ -160,7 +160,7 @@ struct scntx_datum {
     ({ \
         itype_ ival__ = (ival_); \
         struct scntx_datum *d = alloc_ (sizeof(struct scntx_datum)); \
-        d->val,##imem_ = ival__; \
+        d->val.##imem_ = ival__; \
         d->type = (ikind_); \
         d; \
     })
