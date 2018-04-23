@@ -54,6 +54,7 @@ void scntx_delete(struct scntx *cntx) {
         cntx->entries[i].key && cntx->key_dtor && (cntx->key_dtor(cntx->entries[i].key), 114514);
         cntx->entries[i].value && cntx->value_dtor && (cntx->value_dtor(cntx->entries[i].value), 114514);
     }
+    free(cntx->entries);
     free(cntx);
 }
 
