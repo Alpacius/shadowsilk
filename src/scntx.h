@@ -1,5 +1,6 @@
 #pragma once
 
+#include    <alloca.h>
 #include    "stdc_common.h"
 #include    "miscutils.h"
 
@@ -123,7 +124,75 @@ int scntx_remove(struct scntx *cntx, void *key) {
     return 0;
 }
 
-#define scntx_simple(cap_) scntx_new((cap_), djbhash_cstr, cstrcmp, free, free)
+struct scntx_datum {
+    union {
+        char *cstr;
+        uint64_t u64;
+        int64_t i64;
+        double f;
+    } val;
+    int type;
+    char cstr_imm[];
+};
+
+#define DATUM_CSTR 0
+#define DATUM_U64  1
+#define DATUM_I64  2
+#define DATUM_F    3
+
+#define scntx_datum_release free
+#define scntx_datum_imm_release
+
+#define scntx_datum_cstr_(cstr_, alloc_) \
+    ({ \
+        const char *cstr__ = (cstr_); \
+        size_t l = strlen(cstr__) + 1; \
+        struct scntx_datum *d = alloc_(sizeof(struct scntx_datum) + l); \
+        d->val.cstr = d->cstr_imm; \
+        d->type = DATUM_CSTR; \
+        memcpy(d->cstr_imm, cstr__, l); \
+        d; \
+    })
+#define scntx_datum_cstr(cstr_) scntx_datum_cstr_((cstr_), malloc)
+#define scntx_datum_cstr_imm(cstr_) scntx_datum_cstr_((cstr_), alloca)
+
+#define scntx_datum_int_(ival_, itype_, ikind_, imem_, alloc_) \
+    ({ \
+        itype_ ival__ = (ival_); \
+        struct scntx_datum *d = alloc_ (sizeof(struct scntx_datum)); \
+        d->val,##imem_ = ival__; \
+        d->type = (ikind_); \
+        d; \
+    })
+#define scntx_datum_u64(ival_) scntx_datum_int_((ival_), uint64_t, DATUM_U64, u64, malloc)
+#define scntx_datum_u64_imm(ival_) scntx_datum_int_((ival_), uint64_t, DATUM_U64, u64, alloca)
+#define scntx_datum_i64(ival_) scntx_datum_int_((ival_), int64_t, DATUM_I64, i64, malloc)
+#define scntx_datum_i64_imm(ival_) scntx_datum_int_((ival_), int64_t, DATUM_I64, i64, alloca)
+
+#define scntx_datum_f_(fval_, alloca_) \
+    ({ \
+        double fval__ = (fval_); \
+        struct scntx_datum *d = alloc_ (sizeof(struct scntx_datum)); \
+        d->val.f = fval__; \
+        d->type = DATUM_F; \
+        d; \
+    })
+#define scntx_datum_f(fval_) scntx_datum_f_((fval_), malloc)
+#define scntx_datum_f_imm(fval_) scntx_datum_f_((fval_), alloca)
+
+static inline
+int dstrcmp(void *lhs, void *rhs) {
+    struct scntx_datum *l = lhs, *r = rhs;
+    return strcmp(l->val.cstr, r->val.cstr) == 0;
+}
+
+static inline
+uint64_t djbhash_dstr(const void *arg) {
+    const struct scntx_datum *d = arg;
+    return djbhash_cstr(d->val.cstr);
+}
+
+#define scntx_simple(cap_) scntx_new((cap_), djbhash_dstr, dstrcmp, free, scntx_datum_release)
 
 #undef      DEFAULT_LOAD
 #undef      MAX_CAP
