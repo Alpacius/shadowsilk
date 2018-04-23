@@ -105,11 +105,12 @@ int scntx_put(struct scntx *cntx, void *key, void *value) {
     do {
         if (!cntx->entries[i].key) 
             return (cntx->size++), (cntx->entries[i].key = key), (cntx->entries[i].value = value), 1;
-        else
+        else {
             if (cntx->cmp(key, cntx->entries[i].key))
                 i = (i + 1) % cntx->cap;
             else
                 return 0;
+        }
     } while (i != h);
     return 0;
 }
