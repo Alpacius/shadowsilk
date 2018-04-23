@@ -103,7 +103,7 @@ int scntx_put(struct scntx *cntx, void *key, void *value) {
     uint64_t i = h;
     do {
         if (!cntx->entries[i].key) 
-            return (cntx->entries[i].key = key), (cntx->entries[i].value = value), 1;
+            return (cntx->size++), (cntx->entries[i].key = key), (cntx->entries[i].value = value), 1;
         else
             i = (i + 1) % cntx->cap;
     } while (i != h);
@@ -117,6 +117,7 @@ int scntx_remove(struct scntx *cntx, void *key) {
         struct scntx_entry *entry = container_of(value, struct scntx_entry, value);
         cntx->key_dtor && (cntx->key_dtor(entry->key), entry->key = NULL);
         cntx->value_dtor && (cntx->value_dtor(entry->value), entry->value = NULL);
+        cntx->size--;
         return 1;
     }
     return 0;
