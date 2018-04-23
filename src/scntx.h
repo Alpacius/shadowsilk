@@ -122,7 +122,7 @@ int scntx_remove(struct scntx *cntx, void *key) {
     return 0;
 }
 
-#define scntx_simple(cap_, value_dtor_) scntx_new((cap_), djbhash_cstr, cstrcmp, free, (value_dtor_))
+#define scntx_simple(cap_) scntx_new((cap_), djbhash_cstr, cstrcmp, free, free)
 
 #undef      DEFAULT_LOAD
 #undef      MAX_CAP
