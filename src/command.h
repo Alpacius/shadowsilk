@@ -20,7 +20,7 @@ struct sslk_command {
     struct {
         uint64_t cursorx, cursory;
         struct scntx *cntx;
-    };
+    } aux;
     struct sslk_astnode *cached;
     char literal[];
 };
