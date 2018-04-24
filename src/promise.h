@@ -21,3 +21,4 @@ struct sslk_promise {
         if (p->dtor_) \
             p->dtor_(promised_val(p, type_)); \
     }
+#define p_default_abandon(hint_) promise_abandon_##hint_
