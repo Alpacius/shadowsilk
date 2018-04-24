@@ -184,6 +184,19 @@ struct scntx_datum {
 #define scntx_datum_f(fval_) scntx_datum_f_((fval_), malloc)
 #define scntx_datum_f_imm(fval_) scntx_datum_f_((fval_), alloca)
 
+#define scntx_scstr_(cstr_, alloc_) \
+    ({ \
+        const char *cstr__ = (cstr_); \
+        size_t l = strlen(cstr__) + 1; \
+        char *cstr = alloc_(l); \
+        memcpy(cstr, cstr__, l); \
+        cstr; \
+    })
+#define scntx_scstr(cstr_) scntx_scstr_((cstr_), malloc)
+#define scntx_scstr_imm(cstr_) scntx_scstr_((cstr_), alloca)
+#define scntx_scstr_release free
+#define scntx_scstr_imm_release
+
 static inline
 int dstrcmp(void *lhs, void *rhs) {
     struct scntx_datum *l = lhs, *r = rhs;
@@ -196,7 +209,7 @@ uint64_t djbhash_dstr(const void *arg) {
     return djbhash_cstr(d->val.cstr);
 }
 
-#define scntx_simple(cap_) scntx_new((cap_), djbhash_dstr, dstrcmp, free, scntx_datum_release)
+#define scntx_simple(cap_) scntx_new((cap_), djbhash_cstr, cstrcmp, scntx_scstr_release, scntx_datum_release)
 
 #undef      DEFAULT_LOAD
 #undef      MAX_CAP
