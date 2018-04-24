@@ -5,7 +5,7 @@
 #include    "miscutils.h"
 #include    "scntx.h"
 
-#define     DEFAULT_COMMAND_CNTX_SIZE       8
+#define     DEFAULT_COMMAND_CNTX_SIZE       10
 
 #define     SSLK_AST_ABST                   0
 #define     SSLK_AST_APPL                   1
