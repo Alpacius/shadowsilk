@@ -13,7 +13,7 @@
 
 struct sslk_astnode {
     uint32_t type;
-    struct sslk_astnode children[];
+    struct sslk_astnode *children[];
 };
 
 struct sslk_command {
