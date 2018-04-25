@@ -1,5 +1,4 @@
-#ifndef     MISCUTILS_H_
-#define     MISCUTILS_H_
+#pragma once
 
 #define     unlikely(expr_)     __builtin_expect(!!(expr_), 0)
 #define     likely(expr_)       __builtin_expect(!!(expr_), 1)
@@ -46,5 +45,3 @@
 #define    container_of(ptr, type, member) ({ \
      const typeof(((type *) 0)->member) *__mptr = (ptr); \
      (type *) ((char *) __mptr - offset_of(type, member)); })
-
-#endif      // MISCUTILS_H_
