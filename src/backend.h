@@ -3,6 +3,7 @@
 #include    "stdc_common.h"
 #include    "linux_common.h"
 #include    "miscutils.h"
+#include    "list.h"
 #include    "joint.h"
 #include    "cursor.h"
 
@@ -10,9 +11,11 @@ struct sslk_inv_trace {
     // TODO implementation
 };
 
+// TODO implementation
 struct sslk_text_backend {
     jointed;
-    // TODO implementation
+    intrusive;
+    char name[];
 };
 
 #define sslk_backend struct sslk_text_backend backend_;

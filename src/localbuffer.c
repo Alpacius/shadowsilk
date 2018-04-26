@@ -1,7 +1,7 @@
 #include    "localbuffer.h"
 
 #define     GAPSIZE     64
-
+#define     LNSIZE      256
 
 static inline
 struct gapbuffer gapbuffer_new(uint64_t size) {
@@ -83,7 +83,7 @@ struct bufline *bufline_init(struct bufline *ln, uint32_t pos, uint32_t cap) {
 struct bufline *bufline_ruin(struct bufline *ln) {
     if (!list_node_isolated(ihandle_of(ln, ->)))
         list_del(ihandle_of(ln, ->));
-    gapbuffer_delete(ln->buf)
+    gapbuffer_delete(ln->buf);
     return ln;
 }
 
@@ -102,4 +102,26 @@ struct bufline *bufline_insert_str(struct bufline *ln, uint64_t loc, const char 
 
 struct bufline *bufline_delete_str(struct bufline *ln, uint64_t loc, uint64_t size) {
     return (ln->buf = gapbuffer_setloc(ln->buf, loc)), (ln->buf = gapbuffer_delete_segment(ln->buf, size)), ln;
+}
+
+struct localbuf *localbuf_init(struct localbuf *bf) {
+    list_init(&(bf->lines));
+    list_add_tail(ihandle_of(bufline_new(0, LNSIZE), ->), &(bf->lines));
+    return (bf->size = 1), (bf->quick_cursor.locy = 0), (bf->quick_cursor.lnref = bf->lines.next), bf;
+}
+
+struct localbuf *localbuf_ruin(struct localbuf *bf) {
+    list_foreach(&(bf->lines))
+        bufline_delete(intrusive_ref(struct bufline));
+    list_init(&(bf->lines));
+    return (bf->size = 0), (bf->quick_cursor.locy = 0), (bf->quick_cursor.lnref = NULL), bf;
+}
+
+struct localbuf *localbuf_new(void) {
+    struct localbuf *bf = malloc(sizeof(struct localbuf));
+    return bf ? localbuf_init(bf) : NULL;
+}
+
+void localbuf_delete(struct localbuf *bf) {
+    free(localbuf_ruin(bf));
 }
