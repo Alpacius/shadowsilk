@@ -6,7 +6,7 @@
 static inline
 struct gapbuffer gapbuffer_new(uint64_t size) {
     struct gapbuffer gb = { .bufstart = NULL, .bufend = NULL, .gapstart = NULL, .gapend = NULL, .loc = NULL, .size = 0 };
-    if (gb.bufstart = malloc(sizeof(char) * size)) 
+    if (gb.bufstart = malloc(sizeof(wchar_t) * size)) 
         (gb.loc = gb.gapstart = gb.bufstart), (gb.gapend = gb.bufend = gb.bufstart + size);
     return gb;
 }
@@ -20,8 +20,8 @@ void gapbuffer_delete(struct gapbuffer gb) {
 static inline
 struct gapbuffer gapbuffer_expand(struct gapbuffer gb, uint64_t size) {
     if (size > gb.gapend - gb.gapstart) {
-        char *oldbuf = gb.gapstart;
-        gb.bufstart = realloc(gb.gapstart, gb.bufend - gb.bufstart + size + GAPSIZE);
+        wchar_t *oldbuf = gb.gapstart;
+        gb.bufstart = realloc(gb.gapstart, (gb.bufend - gb.bufstart + size + GAPSIZE) * sizeof(wchar_t));
         if (gb.gapstart) 
             (gb.loc += gb.bufstart - oldbuf), (gb.bufend += gb.bufstart - oldbuf), (gb.gapstart += gb.bufstart - oldbuf), (gb.gapend += gb.bufstart - oldbuf);
     }
@@ -35,9 +35,9 @@ struct gapbuffer gapbuffer_correct_gap(struct gapbuffer gb) {
     if (gb.loc == gb.gapend)
         return (gb.loc = gb.gapstart), gb;
     (gb.loc < gb.gapstart) ?
-        (memmove(gb.loc + (gb.gapend - gb.gapstart), gb.loc, gb.gapstart - gb.loc), (gb.gapend -= gb.gapstart - gb.loc), (gb.gapstart = gb.loc))
+        (memmove(gb.loc + (gb.gapend - gb.gapstart), gb.loc, (gb.gapstart - gb.loc) * sizeof(wchar_t)), (gb.gapend -= gb.gapstart - gb.loc), (gb.gapstart = gb.loc))
     :
-        (memmove(gb.gapstart, gb.gapend, gb.loc - gb.gapend), (gb.gapstart += gb.loc - gb.gapend), (gb.gapend = gb.loc), (gb.loc = gb.gapstart));
+        (memmove(gb.gapstart, gb.gapend, (gb.loc - gb.gapend) * sizeof(wchar_t)), (gb.gapstart += gb.loc - gb.gapend), (gb.gapend = gb.loc), (gb.loc = gb.gapstart));
     return gb;
 }
 
@@ -46,7 +46,7 @@ struct gapbuffer gapbuffer_expand_gap(struct gapbuffer gb, uint64_t size) {
     if (size > gb.gapend - gb.gapstart) {
         size += GAPSIZE;
         gb = gapbuffer_expand(gb, size);
-        memmove(gb.gapend + size, gb.gapend, gb.bufend - gb.gapend);
+        memmove(gb.gapend + size, gb.gapend, (gb.bufend - gb.gapend) * sizeof(wchar_t));
         (gb.gapend += size), (gb.bufend += size);
     }
     return gb;
@@ -64,9 +64,9 @@ struct gapbuffer gapbuffer_delete_segment(struct gapbuffer gb, uint64_t size) {
 }
 
 static inline
-struct gapbuffer gapbuffer_insert_cstr(struct gapbuffer gb, const char *cstr) {
+struct gapbuffer gapbuffer_insert_cstr(struct gapbuffer gb, const wchar_t *cstr) {
     (gb.loc != gb.gapstart) && ((gb = gapbuffer_correct_gap(gb)), 114514);
-    size_t len = strlen(cstr);
+    size_t len = wcslen(cstr);
     (len > gb.gapend - gb.gapstart) && ((gb = gapbuffer_expand_gap(gb, len)), 114514);
     while (*cstr) {
         *(gb.gapstart++) = *(cstr++);
@@ -96,7 +96,7 @@ void bufline_delete(struct bufline *ln) {
     free(bufline_ruin(ln));
 }
 
-struct bufline *bufline_insert_str(struct bufline *ln, uint64_t loc, const char *str) {
+struct bufline *bufline_insert_str(struct bufline *ln, uint64_t loc, const wchar_t *str) {
     return (ln->buf = gapbuffer_setloc(ln->buf, loc)), (ln->buf = gapbuffer_insert_cstr(ln->buf, str)), ln;
 }
 
